@@ -161,9 +161,16 @@ void ofApp::draw(){
 
 	if (toggleAverageDraw) {
 		ofEnableBlendMode(OF_BLENDMODE_ALPHA);
+
+
 		for (int i = 0; i < myAvgFlowRois.size(); i++) {
+			
 			averageFlow.setInput(opticalFlow.getVelocity());
 			averageFlow.setRoi(myAvgFlowRois[i]);
+		//second try required to draw and give results over actual averageFlow
+			averageFlow.setInput(opticalFlow.getVelocity());
+			averageFlow.setRoi(myAvgFlowRois[i]);
+
 			averageFlow.update();
 				
 			averageFlow.drawInput(myAvgFlowRois[i].x*densityWidth, myAvgFlowRois[i].y*densityHeight, myAvgFlowRois[i].width*densityWidth, myAvgFlowRois[i].height*densityHeight);
@@ -172,7 +179,6 @@ void ofApp::draw(){
 			ofDrawBitmapStringHighlight("getStDevMagnitude -> " + ofToString(averageFlow.getStDevMagnitude(), 3), myAvgFlowRois[i].x*densityWidth, myAvgFlowRois[i].y*densityHeight - 20);
 			ofDrawBitmapStringHighlight("getComponent 0 -> " + ofToString(averageFlow.getComponent(0), 3), myAvgFlowRois[i].x*densityWidth, myAvgFlowRois[i].y*densityHeight - 60);
 			ofDrawBitmapStringHighlight("getComponent 1 -> " + ofToString(averageFlow.getComponent(1), 3), myAvgFlowRois[i].x*densityWidth, myAvgFlowRois[i].y*densityHeight - 40);
-
 		}
 	}
 	
