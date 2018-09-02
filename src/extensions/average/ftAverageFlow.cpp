@@ -83,12 +83,19 @@ namespace flowTools {
 		ftUtil::roi(inputFbo, _tex, roi);
 		//reset subImages if sizes are differentor not allocated
 		if (!roiFloatImageCV.bAllocated 
-			|| roiFloatImageCV.getWidth() != inputFbo.getWidth()
-			|| roiFloatImageCV.getHeight() != inputFbo.getHeight()) {
+			/*|| roiFloatImageCV.getWidth() != roiColorImageCV.getWidth()
+			|| roiFloatImageCV.getHeight() != inputPixels.getHeight()*/) {
 
-			roiColorImageCV.allocate(inputFbo.getWidth(), inputFbo.getHeight());
-			roiFloatImageCV.allocate(inputFbo.getWidth(), inputFbo.getHeight());
-			auxImagePixes.allocate(inputFbo.getWidth(), inputFbo.getHeight(), OF_IMAGE_COLOR);
+			roiColorImageCV.allocate(inputWidth, inputWidth);
+			auxImagePixes.allocate(inputWidth, outputHeight, OF_IMAGE_COLOR);
+
+			roiFloatImageCV.allocate(outputWidth, outputHeight/*_tex.getWidth(), _tex.getHeight()*/); //_tex size not working. seems that 32x32 has been defined and that I what we have to use.
+
+			cout << "Allocate images: " << endl;
+			cout << "roiColorImageCV w= " << ofToString(roiColorImageCV.getWidth(), 0) + " h= " + ofToString(roiColorImageCV.getHeight(), 0) << endl;
+			cout << "roiFloatImageCV w= " << ofToString(roiFloatImageCV.getWidth(), 0) + " h= " + ofToString(roiFloatImageCV.getHeight(), 0) << endl;
+			cout << "auxImagePixes w= " << ofToString(auxImagePixes.getWidth(), 0) + " h= " + ofToString(auxImagePixes.getHeight(), 0) << endl;
+
 		}
 		ofPopStyle();
 	}
@@ -118,8 +125,8 @@ namespace flowTools {
 	void ftAverageFlow::update() {
 
 		//Works pero peta cuando  UpdateRoi
-		ftUtil::toPixels(inputFbo, inputPixels);
-		roiFloatImageCV.setFromPixels(inputPixels);
+		//ftUtil::toPixels(inputFbo, inputPixels);
+		//roiFloatImageCV.setFromPixels(inputPixels);
 
 		//ftUtil::toPixels(inputFbo, inputPixels);
 
@@ -249,17 +256,32 @@ namespace flowTools {
 	
 	//--------------------------------------------------------------
 	void ftAverageFlow::drawVisualizer(int _x, int _y, int _w, int _h) {
+		ofPushStyle();
+
 		drawBackground(_x, _y, _w, _h);
 		drawGraph(_x, _y, _w, _h);
 
 		ofSetColor(ofColor::red);
-		roiFloatImageCV.draw(ofRectangle(ofGetMouseX(), ofGetMouseY(), _w, _h));
+		roiFloatImageCV.draw(ofRectangle(_x, _y, _w, _h));
+
 		ofSetColor(ofColor::white);
-		////Update and Draw those results sub ROIS	- > TODO separate update from Draw
+		//Update and Draw those results sub ROIS	- > TODO separate update from Draw
+		ofFill();
 		for (int i = 0; i < subRoisVector.size(); i++) {
 			ofVec4f resultsRoi = updateForThisRoi(subRoisVector[i]);
-			ofDrawBitmapStringHighlight("x["+ ofToString(resultsRoi.x,0) + "] y[" +ofToString(resultsRoi.y, 0) + "]" + " magnitude norm -> "+ofToString(resultsRoi.z, 0) + " pStdevMagnitude -> " + ofToString(resultsRoi.w, 0), subRoisVector[i].x, subRoisVector[i].y);
+			ofDrawBitmapStringHighlight("x["+ ofToString(resultsRoi.x,3) + "] y[" +ofToString(resultsRoi.y, 3) + "]" + " magnitude norm -> "+ofToString(resultsRoi.z, 3) + " pStdevMagnitude -> " + ofToString(resultsRoi.w, 3), _x, _y + 40*i);
 		}
+
+		ofNoFill();
+		ofSetLineWidth(1);
+		ofSetColor(ofColor::red);
+		for (int i = 0; i < subRoisVector.size(); i++) {
+			ofDrawRectangle(ofRectangle(_x + subRoisVector[i].x*_w, _y + subRoisVector[i].y*_h, subRoisVector[i].width*_w, subRoisVector[i].height*_h) );
+			//ofDrawBitmapStringHighlight("x[" + ofToString(resultsRoi.x, 0) + "] y[" + ofToString(resultsRoi.y, 0) + "]" + " magnitude norm -> " + ofToString(resultsRoi.z, 0) + " pStdevMagnitude -> " + ofToString(resultsRoi.w, 0), ofGetMouseX(), ofGetMouseY() + 50 * i);
+		}
+
+		ofPopStyle();
+
 	}
 	
 	//--------------------------------------------------------------
