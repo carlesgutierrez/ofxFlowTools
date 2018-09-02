@@ -5,19 +5,29 @@
 #include "ftUtil.h"
 #include "ftFlow.h"
 
+//SubRois
+#include "ofxOpenCv.h"
+
 namespace flowTools {
 	
 	class ftAverageFlow : public ftFlow {
 	public:
 		virtual void	setup(int _width, int _height, ftFlowForceType _type);
 		virtual void	update();
-		
+
+		//Try Sub Roi Images
+		void addSubImages(ofRectangle subImageRect, int _id);
+		void removeSubImages(int idSubImage);
+		ofVec4f updateForThisRoi(ofRectangle _roi);
+
 		void	drawOutput(int _x, int _y, int _w, int _h) override;
 		void	drawROI(int _x, int _y, int _w, int _h);
 		void	drawVisualizer(int _x, int _y, int _w, int _h);
 		
 		void	setInput(ofTexture &_tex) override;
 		void	addInput(ofTexture &_tex, float _strength = 1.0) override;
+
+		
 		
 		void	setRoi(float _x, float _y, float _width, float _height) { setRoi(ofRectangle(_x, _y, _width, _height)); }
 		void	setRoi(ofRectangle _rect);
@@ -42,6 +52,13 @@ namespace flowTools {
 
 		ofRectangle		getRoi()			{ return roi; }
 		ofPoint			getRoiCentre()		{ return ofPoint(roi.x + roi.width / 2, roi.y + roi.height / 2); }
+
+		//SubRois
+		std::vector<ofRectangle> subRoisVector;
+		//
+		ofxCvFloatImage roiFloatImageCV;
+		ofxCvColorImage roiColorImageCV;
+		ofImage auxImagePixes;
 		
 	protected:
 		ofParameterGroup 					roiParameters;

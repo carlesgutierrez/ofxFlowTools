@@ -81,6 +81,15 @@ namespace flowTools {
 		ofPushStyle();
 		ofEnableBlendMode(OF_BLENDMODE_DISABLED);
 		ftUtil::roi(inputFbo, _tex, roi);
+		//reset subImages if sizes are differentor not allocated
+		if (!roiFloatImageCV.bAllocated 
+			|| roiFloatImageCV.getWidth() != inputFbo.getWidth()
+			|| roiFloatImageCV.getHeight() != inputFbo.getHeight()) {
+
+			roiColorImageCV.allocate(inputFbo.getWidth(), inputFbo.getHeight());
+			roiFloatImageCV.allocate(inputFbo.getWidth(), inputFbo.getHeight());
+			auxImagePixes.allocate(inputFbo.getWidth(), inputFbo.getHeight(), OF_IMAGE_COLOR);
+		}
 		ofPopStyle();
 	}
 	
@@ -95,14 +104,63 @@ namespace flowTools {
 	}
 
 	//--------------------------------------------------------------
+	void ftAverageFlow::addSubImages(ofRectangle subImageRect, int idSubImage) {
+		subRoisVector.push_back(subImageRect);
+	}
+
+	//--------------------------------------------------------------
+	void ftAverageFlow::removeSubImages(int idSubImage) {
+		//TODO remove specific subRegion
+		subRoisVector.pop_back();
+	}
+
+	//--------------------------------------------------------------
 	void ftAverageFlow::update() {
+
+		//Works pero peta cuando  UpdateRoi
 		ftUtil::toPixels(inputFbo, inputPixels);
-		float* floatPixelData = inputPixels.getData();
+		roiFloatImageCV.setFromPixels(inputPixels);
+
+		//ftUtil::toPixels(inputFbo, inputPixels);
+
+		//1
+		//inputFbo.readToPixels(roiColorImageCV.getPixels());
+		//roiFloatImageCV = roiColorImageCV;
+
+		//2
+		inputFbo.readToPixels(auxImagePixes);
+		roiColorImageCV.setFromPixels(auxImagePixes);
+		roiFloatImageCV = roiColorImageCV;
+
+		//roiFloatImageCV.setFromPixels(inputFbo.getP);
+
+		//auxImagePixes.setFromPixels(inputPixels);
+		//roiFloatImageCV.set ;
+		//roiFloatImageCV.updateTexture();
+		//Change here to use several ROI's reading just subImage
+		//for (int i = 0; i < subRoisVector.size(); i++) {
+		//	ofVec4f resultsRoi = updateForThisRoi(subRoisVector[i]);
+		//}
+
+	}
+	//--------------------------------------------------------------
+	ofVec4f ftAverageFlow::updateForThisRoi(ofRectangle _roi) {
+
+		ofVec4f averageFlow_Analisys_Roi = ofVec4f(0, 0, 0, 0); //component 0, component 1, pNormalizedMagnitude, pStdevMagnitude 
+		//Change here to use several ROI's reading just subImage
+		roiFloatImageCV.setROI(ofRectangle(_roi.x*roiFloatImageCV.getWidth(), _roi.y*roiFloatImageCV.getHeight(), _roi.width*roiFloatImageCV.getWidth(), _roi.height*roiFloatImageCV.getHeight()));
+		//roiFloatImageCV.updateTexture();
+
+		//ofFloatPixels roiPixels = roiFloatImageCV.getPixels();
+		//ofFloatPixels floatPixelData = roiFloatImageCV.getRoiFloatPixelsRef();
+
+		//float* floatPixelData = inputPixels.getData();
+		float* floatPixelData = roiFloatImageCV.getRoiPixelsAsFloats();
 		
 		vector<float> totalVelocity;
 		totalVelocity.resize(numChannels, 0);
 		
-		int numPixels = inputWidth * inputHeight;
+		int numPixels = roiFloatImageCV.getROI().getWidth() * roiFloatImageCV.getROI().getHeight();
 		for (int i=0; i<numPixels; i++) {
 			float mag = 0;
 			for (int j=0; j<numChannels; j++) {
@@ -152,6 +210,21 @@ namespace flowTools {
 		pStdevMagnitude.set(int(stdevMagnitude * 100) / 100.0);
 		
 		bUpdateVisualizer = true;
+
+		//Return Desired data Updated
+		for (int i = 0; i<numChannels; i++) {
+			if (i == 0) {
+				averageFlow_Analisys_Roi.x = components[i];
+			}
+			else if (i == 1) {
+				averageFlow_Analisys_Roi.y = components[i];
+			}
+		}
+
+		averageFlow_Analisys_Roi.z = pNormalizedMagnitude;
+		averageFlow_Analisys_Roi.w = pStdevMagnitude;
+
+		return averageFlow_Analisys_Roi;
 	}
 	
 	//--------------------------------------------------------------
@@ -178,6 +251,15 @@ namespace flowTools {
 	void ftAverageFlow::drawVisualizer(int _x, int _y, int _w, int _h) {
 		drawBackground(_x, _y, _w, _h);
 		drawGraph(_x, _y, _w, _h);
+
+		ofSetColor(ofColor::red);
+		roiFloatImageCV.draw(ofRectangle(ofGetMouseX(), ofGetMouseY(), _w, _h));
+		ofSetColor(ofColor::white);
+		////Update and Draw those results sub ROIS	- > TODO separate update from Draw
+		for (int i = 0; i < subRoisVector.size(); i++) {
+			ofVec4f resultsRoi = updateForThisRoi(subRoisVector[i]);
+			ofDrawBitmapStringHighlight("x["+ ofToString(resultsRoi.x,0) + "] y[" +ofToString(resultsRoi.y, 0) + "]" + " magnitude norm -> "+ofToString(resultsRoi.z, 0) + " pStdevMagnitude -> " + ofToString(resultsRoi.w, 0), subRoisVector[i].x, subRoisVector[i].y);
+		}
 	}
 	
 	//--------------------------------------------------------------
