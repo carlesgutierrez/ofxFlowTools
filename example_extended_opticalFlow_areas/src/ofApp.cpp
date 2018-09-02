@@ -4,13 +4,16 @@
 void ofApp::addRoiAverage(float x, float y, float w, float h) {
 	ofRectangle	myNewRoi;
 	myNewRoi.set(x, y, w, h);
-	myAvgFlowRois.push_back(myNewRoi); 
+	averageFlow.addSubImages(myNewRoi, 0); // TODO add ID
+
+	//myAvgFlowRois.push_back(myNewRoi); 
 }
 //
 ////--------------------------------------------------------------
 void ofApp::removeRoiAverage(int id) {
 
-	myAvgFlowRois.pop_back(); // TODIO use id
+	//myAvgFlowRois.pop_back(); // TODIO use id
+	averageFlow.removeSubImages(0);// TODIO use id
 }
 
 //--------------------------------------------------------------
@@ -33,9 +36,8 @@ void ofApp::setup(){
 	//averageFlow.setRoi(.2, .2, .2, .2);
 
 	//Setup several Averages.
-	addRoiAverage(0.1, 0.1, 0.25, 0.25);
-	addRoiAverage(0.3, 0.5, 0.2, 0.3);
-	addRoiAverage(0.6, 0.7, 0.15, 0.2);
+	ofRectangle myMainArea = ofRectangle(0.1, 0.1, 0.55, 0.55);
+	myAvgFlowRois.push_back(myMainArea);
 
 	flows.push_back(&opticalFlow);
 	flows.push_back(&averageFlow);
@@ -131,15 +133,20 @@ void ofApp::update(){
 		cameraFbo.end();
 		
 		opticalFlow.setInput(cameraFbo.getTexture());
+
+		averageFlow.setInput(opticalFlow.getVelocity());
+		averageFlow.setRoi(ofRectangle(0.1,0.1,0.5,0.6));
+
+		opticalFlow.update();
+
+		//for (int i = 0; i < myAverageFlowVector.size(); i++) {
+		/*averageFlow.setInput(opticalFlow.getVelocity());*/
+		averageFlow.update();
+		//}
 	}
 
 
-	opticalFlow.update();
-	
-	//for (int i = 0; i < myAverageFlowVector.size(); i++) {
-	/*averageFlow.setInput(opticalFlow.getVelocity());*/
-	//averageFlow.update();
-	//}
+
 
 }
 
@@ -164,15 +171,7 @@ void ofApp::draw(){
 
 
 		for (int i = 0; i < myAvgFlowRois.size(); i++) {
-			
-			averageFlow.setInput(opticalFlow.getVelocity());
-			averageFlow.setRoi(myAvgFlowRois[i]);
-		//second try required to draw and give results over actual averageFlow
-			averageFlow.setInput(opticalFlow.getVelocity());
-			averageFlow.setRoi(myAvgFlowRois[i]);
-
-			averageFlow.update();
-				
+					
 			averageFlow.drawInput(myAvgFlowRois[i].x*densityWidth, myAvgFlowRois[i].y*densityHeight, myAvgFlowRois[i].width*densityWidth, myAvgFlowRois[i].height*densityHeight);
 			averageFlow.drawVisualizer(myAvgFlowRois[i].x*densityWidth, myAvgFlowRois[i].y*densityHeight, myAvgFlowRois[i].width*densityWidth, myAvgFlowRois[i].height*densityHeight);
 
@@ -220,6 +219,8 @@ void ofApp::drawGui() {
 void ofApp::keyPressed(int key){
 	switch (key) {
 		default: break;
+	case '+': addRoiAverage(ofRandom(0.75), ofRandom(0.75), ofRandom(0.45), ofRandom(0.45)); break;
+	case '-': removeRoiAverage(0); break;
 		case '1': visualizationMode.set(INPUT_FOR_DEN); break;
 		case '2': visualizationMode.set(INPUT_FOR_VEL); break;
 		case '3': visualizationMode.set(FLOW_VEL); break;
