@@ -9,8 +9,7 @@ void ofApp::addRoiAverage(float x, float y, float w, float h) {
 //
 ////--------------------------------------------------------------
 void ofApp::removeRoiAverage(int id) {
-
-	myAvgFlowRois.pop_back(); // TODIO use id
+	if(myAvgFlowRois.size()>0)myAvgFlowRois.pop_back(); // TODIO use id
 }
 
 //--------------------------------------------------------------
@@ -220,6 +219,10 @@ void ofApp::drawGui() {
 void ofApp::keyPressed(int key){
 	switch (key) {
 		default: break;
+		//Quick test adding several ROIS with + and - Keys
+		case '+': addRoiAverage(ofRandom(0.25, 0.5), ofRandom(0.25, 0.5), ofRandom(0.25, 0.4), ofRandom(0.25, 0.4)); break;
+		case '-': removeRoiAverage(0); break;
+
 		case '1': visualizationMode.set(INPUT_FOR_DEN); break;
 		case '2': visualizationMode.set(INPUT_FOR_VEL); break;
 		case '3': visualizationMode.set(FLOW_VEL); break;
